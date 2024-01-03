@@ -135,8 +135,8 @@ static void nlua_error(lua_State *const lstate, const char *const msg)
   }
 
   if (in_script) {
-    os_errmsg(str);
-    os_errmsg("\n");
+    fprintf(stderr, msg, (int)len, str);
+    fprintf(stderr, "\n");
   } else {
     msg_ext_set_kind("lua_error");
     semsg_multiline(msg, (int)len, str);
@@ -944,7 +944,9 @@ static void nlua_print_event(void **argv)
       break;
     }
     msg(str + start);
-    msg_didout = true;  // Make blank lines work properly
+    if (msg_silent == 0) {
+      msg_didout = true;  // Make blank lines work properly
+    }
   }
   if (len && str[len - 1] == NUL) {  // Last was newline
     msg("");

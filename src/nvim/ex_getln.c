@@ -126,6 +126,7 @@ typedef struct command_line_state {
   int break_ctrl_c;
   expand_T xpc;
   long *b_im_ptr;
+  buf_T *b_im_ptr_buf;  ///< buffer where b_im_ptr is valid
 } CommandLineState;
 
 typedef struct cmdpreview_undo_info {
@@ -148,6 +149,8 @@ typedef struct cmdpreview_buf_info {
   buf_T *buf;
   long save_b_p_ul;
   int save_b_changed;
+  pos_T save_b_op_start;
+  pos_T save_b_op_end;
   varnumber_T save_changedtick;
   CpUndoInfo undo_info;
 } CpBufInfo;
@@ -746,7 +749,7 @@ static uint8_t *command_line_enter(int firstc, long count, int indent, bool clea
     } else {
       s->b_im_ptr = &curbuf->b_p_imsearch;
     }
-
+    s->b_im_ptr_buf = curbuf;
     if (*s->b_im_ptr == B_IMODE_LMAP) {
       State |= MODE_LANGMAP;
     }
@@ -1548,20 +1551,21 @@ static int command_line_erase_chars(CommandLineState *s)
 /// language :lmap mappings and/or Input Method.
 static void command_line_toggle_langmap(CommandLineState *s)
 {
+  long *b_im_ptr = buf_valid(s->b_im_ptr_buf) ? s->b_im_ptr : NULL;
   if (map_to_exists_mode("", MODE_LANGMAP, false)) {
     // ":lmap" mappings exists, toggle use of mappings.
     State ^= MODE_LANGMAP;
-    if (s->b_im_ptr != NULL) {
+    if (b_im_ptr != NULL) {
       if (State & MODE_LANGMAP) {
-        *s->b_im_ptr = B_IMODE_LMAP;
+        *b_im_ptr = B_IMODE_LMAP;
       } else {
-        *s->b_im_ptr = B_IMODE_NONE;
+        *b_im_ptr = B_IMODE_NONE;
       }
     }
   }
 
-  if (s->b_im_ptr != NULL) {
-    if (s->b_im_ptr == &curbuf->b_p_iminsert) {
+  if (b_im_ptr != NULL) {
+    if (b_im_ptr == &curbuf->b_p_iminsert) {
       set_iminsert_global(curbuf);
     } else {
       set_imsearch_global(curbuf);
@@ -2346,6 +2350,8 @@ static void cmdpreview_prepare(CpInfo *cpinfo)
       cp_bufinfo.buf = buf;
       cp_bufinfo.save_b_p_ul = buf->b_p_ul;
       cp_bufinfo.save_b_changed = buf->b_changed;
+      cp_bufinfo.save_b_op_start = buf->b_op_start;
+      cp_bufinfo.save_b_op_end = buf->b_op_end;
       cp_bufinfo.save_changedtick = buf_get_changedtick(buf);
       cmdpreview_save_undo(&cp_bufinfo.undo_info, buf);
       kv_push(cpinfo->buf_info, cp_bufinfo);
@@ -2420,6 +2426,9 @@ static void cmdpreview_restore_state(CpInfo *cpinfo)
 
     u_blockfree(buf);
     cmdpreview_restore_undo(&cp_bufinfo.undo_info, buf);
+
+    buf->b_op_start = cp_bufinfo.save_b_op_start;
+    buf->b_op_end = cp_bufinfo.save_b_op_end;
 
     if (cp_bufinfo.save_changedtick != buf_get_changedtick(buf)) {
       buf_set_changedtick(buf, cp_bufinfo.save_changedtick);

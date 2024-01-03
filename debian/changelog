@@ -1,3 +1,10 @@
+neovim (0.9.5-0deepin) unstable; urgency=medium
+
+  * New upstream version 0.9.5
+  * This is a maintenance release, focusing on bug fixes.
+
+ -- xiangzelong <xiangzelong@deepin.org>  Wed, 03 Jan 2024 15:12:48 +0800
+
 neovim (0.9.4-deepin) unstable; urgency=medium
 
   * New upstream version 0.9.4

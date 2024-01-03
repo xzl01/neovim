@@ -393,6 +393,13 @@ static int insert_check(VimState *state)
     Insstart_orig = Insstart;
   }
 
+  if (curbuf->terminal) {
+    // Exit Insert mode and go to Terminal mode.
+    stop_insert_mode = true;
+    restart_edit = 'I';
+    stuffcharReadbuff(K_NOP);
+  }
+
   if (stop_insert_mode && !ins_compl_active()) {
     // ":stopinsert" used
     s->count = 0;
@@ -1534,8 +1541,9 @@ void edit_unputchar(void)
 
 // Called when p_dollar is set: display a '$' at the end of the changed text
 // Only works when cursor is in the line that changes.
-void display_dollar(colnr_T col)
+void display_dollar(colnr_T col_arg)
 {
+  colnr_T col = col_arg < 0 ? 0 : col_arg;
   colnr_T save_col;
 
   if (!redrawing()) {
