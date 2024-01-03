@@ -1694,6 +1694,9 @@ int execute_cmd(exarg_T *eap, CmdParseInfo *cmdinfo, bool preview)
     goto end;
   }
 
+  cstack_T cstack = { .cs_idx = -1 };
+  eap->cstack = &cstack;
+
   // Execute the command
   execute_cmd0(&retv, eap, &errormsg, preview);
 
@@ -3345,6 +3348,7 @@ static linenr_T get_address(exarg_T *eap, char **ptr, cmd_addr_T addr_type, int 
         fmark_T *fm = mark_get(curbuf, curwin, NULL, flag, *cmd);
         cmd++;
         if (fm != NULL && fm->fnum != curbuf->handle) {
+          (void)mark_move_to(fm, 0);
           // Jumped to another file.
           lnum = curwin->w_cursor.lnum;
         } else {
@@ -7295,7 +7299,9 @@ static void ex_terminal(exarg_T *eap)
     char shell_argv[512] = { 0 };
 
     while (*p != NULL) {
-      snprintf(tempstring, sizeof(tempstring), ",\"%s\"", *p);
+      char *escaped = vim_strsave_escaped(*p, "\"\\");
+      snprintf(tempstring, sizeof(tempstring), ",\"%s\"", escaped);
+      xfree(escaped);
       xstrlcat(shell_argv, tempstring, sizeof(shell_argv));
       p++;
     }

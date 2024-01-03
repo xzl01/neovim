@@ -988,9 +988,12 @@ Integer nvim_open_term(Buffer buffer, DictionaryOf(LuaRef) opts, Error *err)
   topts.write_cb = term_write;
   topts.resize_cb = term_resize;
   topts.close_cb = term_close;
-  Terminal *term = terminal_open(buf, topts);
-  terminal_check_size(term);
-  chan->term = term;
+  channel_incref(chan);
+  terminal_open(&chan->term, buf, topts);
+  if (chan->term != NULL) {
+    terminal_check_size(chan->term);
+  }
+  channel_decref(chan);
   return (Integer)chan->id;
 }
 
@@ -1689,7 +1692,9 @@ static void write_msg(String message, bool to_err, bool writeln)
   if (c == NL) { \
     kv_push(line_buf, NUL); \
     msg(line_buf.items); \
-    msg_didout = true; \
+    if (msg_silent == 0) { \
+      msg_didout = true; \
+    } \
     kv_drop(line_buf, kv_size(line_buf)); \
     kv_resize(line_buf, LINE_BUFFER_MIN_SIZE); \
   } else if (c == NUL) { \

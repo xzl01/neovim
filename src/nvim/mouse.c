@@ -137,6 +137,8 @@ static void move_tab_to_mouse(void)
   }
 }
 
+static bool got_click = false;  // got a click some time back
+
 /// Call click definition function for column "col" in the "click_defs" array for button
 /// "which_button".
 static void call_click_def_func(StlClickDefinition *click_defs, int col, int which_button)
@@ -192,6 +194,8 @@ static void call_click_def_func(StlClickDefinition *click_defs, int col, int whi
   typval_T rettv;
   (void)call_vim_function(click_defs[col].func, ARRAY_SIZE(argv), argv, &rettv);
   tv_clear(&rettv);
+  // Make sure next click does not register as drag when callback absorbs the release event.
+  got_click = false;
 }
 
 /// Translate window coordinates to buffer position without any side effects.
@@ -289,8 +293,6 @@ static int get_fpos_of_mouse(pos_T *mpos)
 /// @return           true if start_arrow() should be called for edit mode.
 bool do_mouse(oparg_T *oap, int c, int dir, long count, bool fixindent)
 {
-  static bool got_click = false;        // got a click some time back
-
   int which_button;             // MOUSE_LEFT, _MIDDLE or _RIGHT
   bool is_click;                // If false it's a drag or release event
   bool is_drag;                 // If true it's a drag event
@@ -371,7 +373,7 @@ bool do_mouse(oparg_T *oap, int c, int dir, long count, bool fixindent)
       stuffnumReadbuff(count);
     }
     stuffcharReadbuff(Ctrl_T);
-    got_click = false;                  // ignore drag&release now
+    got_click = false;            // ignore drag&release now
     return false;
   }
 
@@ -845,7 +847,7 @@ popupexit:
     } else {                                    // location list window
       do_cmdline_cmd(".ll");
     }
-    got_click = false;                  // ignore drag&release now
+    got_click = false;                          // ignore drag&release now
   } else if ((mod_mask & MOD_MASK_CTRL)
              || (curbuf->b_help && (mod_mask & MOD_MASK_MULTI_CLICK) == MOD_MASK_2CLICK)) {
     // Ctrl-Mouse click (or double click in a help window) jumps to the tag
@@ -854,7 +856,7 @@ popupexit:
       stuffcharReadbuff(Ctrl_O);
     }
     stuffcharReadbuff(Ctrl_RSB);
-    got_click = false;                  // ignore drag&release now
+    got_click = false;                          // ignore drag&release now
   } else if ((mod_mask & MOD_MASK_SHIFT)) {
     // Shift-Mouse click searches for the next occurrence of the word under
     // the mouse pointer

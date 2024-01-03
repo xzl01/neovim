@@ -166,7 +166,7 @@ void update_topline(win_T *wp)
   old_topfill = wp->w_topfill;
 
   // If the buffer is empty, always set topline to 1.
-  if (buf_is_empty(curbuf)) {             // special case - file is empty
+  if (buf_is_empty(wp->w_buffer)) {  // special case - file is empty
     if (wp->w_topline != 1) {
       redraw_later(wp, UPD_NOT_VALID);
     }
@@ -1024,6 +1024,9 @@ void f_screenpos(typval_T *argvars, typval_T *rettv, EvalFuncData fptr)
   if (pos.lnum > wp->w_buffer->b_ml.ml_line_count) {
     semsg(_(e_invalid_line_number_nr), pos.lnum);
     return;
+  }
+  if (pos.col < 0) {
+    pos.col = 0;
   }
   int row = 0;
   int scol = 0, ccol = 0, ecol = 0;
