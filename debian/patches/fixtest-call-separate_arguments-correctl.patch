@@ -1,0 +1,27 @@
+From: James McCoy <jamessan@jamessan.com>
+Date: Fri, 5 Jan 2024 14:07:34 -0500
+X-Dgit-Generated: 0.9.5-1 4029f9c79a1b8e9750afdd58f7c3b4f7ed816770
+Subject: fix(test): call separate_arguments() correctly to honor $BUSTED_ARGS (#26905)
+
+separate_arguments() doesn't operate in place on a variable.  It expects
+a string argument to parse and stores the results in the specified
+variable.
+
+(cherry picked from commit 52e6059415ba40b955267a9b447b5c57fc45b397)
+
+---
+
+diff --git a/cmake/RunTests.cmake b/cmake/RunTests.cmake
+index fe346661b..cb221ae84 100644
+--- a/cmake/RunTests.cmake
++++ b/cmake/RunTests.cmake
+@@ -36,8 +36,7 @@ if(BUSTED_OUTPUT_TYPE STREQUAL junit)
+   set(EXTRA_ARGS OUTPUT_FILE ${BUILD_DIR}/${TEST_TYPE}test-junit.xml)
+ endif()
+ 
+-set(BUSTED_ARGS $ENV{BUSTED_ARGS})
+-separate_arguments(BUSTED_ARGS)
++separate_arguments(BUSTED_ARGS NATIVE_COMMAND $ENV{BUSTED_ARGS})
+ 
+ if(DEFINED ENV{TEST_TAG} AND NOT "$ENV{TEST_TAG}" STREQUAL "")
+   list(APPEND BUSTED_ARGS --tags $ENV{TEST_TAG})

@@ -1,7 +1,8 @@
 Source: neovim
 Section: editors
 Priority: optional
-Maintainer: Harry Loong <xiangzelong@deepin.org> black-desk<chenlinxuan@deepin.org>
+Maintainer: Harry Loong <xiangzelong@deepin.org>
+            black-desk <chenlinxuan@deepin.org>
 Uploaders: Harry Loong <xiangzelong@deepin.org>
 Build-Depends:
  cmake (>= 3.10),
@@ -10,27 +11,29 @@ Build-Depends:
  gperf,
  less <!nocheck>,
  libacl1-dev,
- libluajit-5.1-dev [amd64 arm64 hurd-i386 i386],
+ libluajit-5.1-dev [amd64 armel armhf arm64 hurd-i386 i386] | liblua5.1-dev,
  libmsgpack-dev (>= 1.0.0),
  libnss-wrapper <!nocheck>,
- libtermkey-dev,
- libtree-sitter-dev (>= 0.20.8),
+ libtermkey-dev (>= 0.22),
+ libtree-sitter-dev (>= 0.20.0),
  libunibilium-dev,
  libuv1-dev,
- libvterm-dev (>= 0.3.3),
+ libvterm-dev (>= 0.3),
  locales <!nocheck>,
  lua-bitop,
  lua-busted <!nocheck>,
+ lua-coxpcall <!nocheck>,
  lua-filesystem (>= 1.7) <!nocheck>,
  lua-inspect <!nocheck>,
  lua-lpeg,
  lua-luv-dev (>= 1.43.0),
- lua-mpack (>= 1.0.11),
- lua-nvim (>= 0.2.4) <!nocheck>,
+ lua-mpack,
  luajit (>= 2.1.0~beta3+git20220320),
  lua5.1,
  ninja-build,
  pkg-config,
+ python3-pynvim [!hppa !ia64 !sh4] <!nocheck>,
+ tree-sitter
  tzdata <!nocheck>,
 Standards-Version: 4.6.2
 Homepage: https://neovim.io/
@@ -45,7 +48,7 @@ Depends:
  ${neovim:Depends},
  ${misc:Depends},
  ${shlibs:Depends}
-Recommends: python3-pynvim (>= 0.4.2), xclip | xsel | wl-clipboard, xxd
+Recommends: python3-pynvim, xclip | xsel | wl-clipboard, xxd
 Suggests: ctags, vim-scripts
 Provides: editor
 Description: heavily refactored vim fork

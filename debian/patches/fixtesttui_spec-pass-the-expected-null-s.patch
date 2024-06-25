@@ -1,0 +1,32 @@
+From: James McCoy <jamessan@jamessan.com>
+Date: Fri, 5 Jan 2024 22:56:34 -0500
+X-Dgit-Generated: 0.9.5-1 251305b47cd669aef3c3a2fa2dbc6947e7812bec
+Subject: fix(test/tui_spec): pass the expected NULL-sentinel to execl()
+
+Since execl() is a variadic function, it requries a NULL-terminal to
+indicate the end of its argument list, c.f. exec(3)
+
+> The first argument, by convention, should point to the filename
+> associated with the file being executed.  The list of arguments *must*
+> be terminated by a null pointer
+
+This fixes the failure seen on aarch64 and i386, due to garbage data
+being considered part of the variadic arguments.
+
+(cherry picked from commit 8861ad83fd7fe795ef3c77f0886694ffd7cd8184)
+
+---
+
+diff --git a/test/functional/terminal/tui_spec.lua b/test/functional/terminal/tui_spec.lua
+index 59dd3a272..894b94799 100644
+--- a/test/functional/terminal/tui_spec.lua
++++ b/test/functional/terminal/tui_spec.lua
+@@ -1823,7 +1823,7 @@ describe('TUI', function()
+     write_file(script_file, [=[
+       local ffi = require('ffi')
+       ffi.cdef([[int execl(const char *, const char *, ...);]])
+-      ffi.C.execl(vim.v.progpath, 'Xargv0nvim', '--clean')
++      ffi.C.execl(vim.v.progpath, 'Xargv0nvim', '--clean', nil)
+     ]=])
+     finally(function()
+       os.remove(script_file)

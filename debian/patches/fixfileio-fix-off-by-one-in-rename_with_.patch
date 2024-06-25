@@ -1,0 +1,48 @@
+From: Colin Watson <cjwatson@debian.org>
+Date: Fri, 8 Mar 2024 14:37:47 +0000
+X-Dgit-Generated: 0.9.5-6 b3f3cd8b320b4ef03e073f28c1352486df6e4b99
+Subject: fix(fileio): fix off-by-one in rename_with_tmp
+
+`_FORTIFY_SOURCE` on Ubuntu caught this, resulting in:
+
+    [OLDTEST] Running test_rename
+    Failed: test_rename :: Nvim exited with non-zero code
+    Job exited with code 134
+    Screen (23 lines)
+    ================================================================================
+    "test_rename.vim" "test_rename.vim" 120L, 3623B
+    Executing Test_rename_copy()
+    Executing Test_rename_dir_to_dir()
+    Executing Test_rename_fails()
+    Error detected while processing command line..script /<<BUILDDIR>>/neovim-0.9.5/test/old/testdir/runtest.vim[437]..function RunTheTest[44]..Test_rename_fails:
+    line   17:
+    E730: using List as a String
+    line   18:
+    E976: using Blob as a String
+    Executing Test_rename_file_ignore_case()*** buffer overflow detected ***: terminated
+
+`snprintf`'s second parameter should be no greater than the number of
+remaining bytes in the allocated object.  We can see that this was off
+by one, because in the simple case where `tail == tempname` (for a file
+in the current directory), `rename_with_tmp` was passing `MAXPATHL + 2`
+for an object allocated with a size of only `MAXPATHL + 1`.
+
+Introduced in 5f1a153831d480180b2203120cff776d771ec1a4.
+
+Forwarded: https://github.com/neovim/neovim/pull/27780
+
+---
+
+diff --git a/src/nvim/fileio.c b/src/nvim/fileio.c
+index d4725ccd8..5fcfc5011 100644
+--- a/src/nvim/fileio.c
++++ b/src/nvim/fileio.c
+@@ -4510,7 +4510,7 @@ static int rename_with_tmp(const char *const from, const char *const to)
+   STRCPY(tempname, from);
+   for (int n = 123; n < 99999; n++) {
+     char *tail = path_tail(tempname);
+-    snprintf(tail, (size_t)((MAXPATHL + 1) - (tail - tempname - 1)), "%d", n);
++    snprintf(tail, (size_t)((MAXPATHL + 1) - (tail - tempname)), "%d", n);
+ 
+     if (!os_path_exists(tempname)) {
+       if (os_rename(from, tempname) == OK) {
